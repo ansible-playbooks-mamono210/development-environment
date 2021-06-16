@@ -1,0 +1,10 @@
+---
+- name: Configure $HOME/.bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ linux_user_home }}/.bashrc"
+    line: "{{ item }}"
+    state: present
+    insertafter: EOF
+  loop:
+    - '# Git bash completion settings'
+    - "source /usr/share/bash-completion/completions/git\n"

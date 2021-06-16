@@ -1,0 +1,174 @@
+---
+name: build
+on: [deployment, push]
+
+jobs:
+  ansible-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install ansible-lint
+        run: |
+          pip install "ansible-lint[community,yamllint]"
+
+      - name: Install galaxy roles
+        run: |
+          ansible-galaxy install -r roles/requirements.yml -p roles/
+
+      - name: Execulte ansible-lint
+        run: |
+          ansible-lint
+
+      - name: Show ansible-lint version
+        run: |
+          pip list | grep ansible \
+          | GREP_COLORS='mt=01;34' egrep --color=always '[[:digit:]]' \
+          | GREP_COLORS='mt=01;34' egrep --color=always '\.' \
+          | GREP_COLORS='mt=01;33' egrep --color=always 'ansible.* '
+          ansible-lint --version
+
+  detect-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install Yelp detect-secrets
+        run: |
+          pip install detect-secrets
+
+      - name: Execulte detect-secrets(disabled KeywordDetector plugin)
+        run: |
+          detect-secrets scan --disable-plugin KeywordDetector \
+          | jq .results > results.json
+
+      - name: Check whether detect-secrets found vulnerability
+        run: |
+          line=$(cat results.json | wc -w)
+          if [ $line -gt 2 ]; then
+            echo "vulnerability was found"
+            detect-secrets scan | jq .results -C
+            exit 1;
+          fi
+
+      - name: Show detect-secrets version
+        run: |
+          pip list | grep detect-secrets \
+          | GREP_COLORS='mt=01;34' egrep --color=always '[[:digit:]]' \
+          | GREP_COLORS='mt=01;34' egrep --color=always '\.' \
+          | GREP_COLORS='mt=01;33' egrep --color=always 'detect-secrets.* '
+
+  molecule:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install -r molecule/requirements.txt
+
+      - name: Install required Ansible Collections
+        run: |
+          ansible-galaxy collection install community.molecule
+
+      - name: Create galaxy dependencies file in 'molecule/default/'
+        run: |
+          cp roles/requirements.yml molecule/default/requirements.yml
+
+      - name: Set latest AMI image id to environment variables
+        run: |
+          AMI_ID=$(aws ec2 describe-images \
+          --owners "${{ secrets.AMI_OWNER_ID }}" \
+          --filters "Name=name,Values=centos7-*" \
+          --query 'Images[*][CreationDate, ImageId, Name]' \
+          --output text | sort -r | awk 'NR==1 {print $2}')
+          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Set timestamp for making sure Molecule would create unique AWS resources
+        run: |
+          TIMESTAMP=$(date --date "9 hours" "+%Y%m%d_%H:%M:%S")
+          echo "PLATFORM_NAME=molecule_user_group_test_${TIMESTAMP}" >> $GITHUB_ENV
+          echo "KEYPAIR_NAME=molecule_user_group_test_${TIMESTAMP}" >> $GITHUB_ENV
+          echo "SECURITY_GROUP_NAME=molecule_user_group_test_${TIMESTAMP}" >> $GITHUB_ENV
+          echo "TAG_NAME=molecule_user_group_test_${TIMESTAMP}" >> $GITHUB_ENV
+
+      - name: Set AWS resource creator name to system environment variables
+        run: |
+          author_email=$(git show -s --format='%ae' ${{ github.sha }})
+          echo "CREATED_BY=$author_email" >> $GITHUB_ENV
+
+      - name: Test with molecule
+        run: |
+          molecule test
+        env:
+          # AMI_ID: sotred in system environment variables
+          ANSIBLE_FORCE_COLOR: '1'
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          # KEYPAIR_NAME: sotred in system environment variables
+          # PLATFORM_NAME: sotred in system environment variables
+          PROFILE_TASKS_SORT_ORDER: 'none'
+          PROFILE_TASKS_TASK_OUTPUT_LIMIT: '200'
+          PY_COLORS: '1'
+          # SECURITY_GROUP_NAME: sotred in system environment variables
+          # TAG_NAME: sotred in system environment variables
+          TZ: 'Asia/Tokyo'
+          VPC_SUBNET_ID: ${{ secrets.VPC_SUBNET_ID }}
+
+      - name: Show Ansible version
+        run: |
+          pip list | grep ansible \
+          | GREP_COLORS='mt=01;34' egrep --color=always '[[:digit:]]' \
+          | GREP_COLORS='mt=01;34' egrep --color=always '\.' \
+          | GREP_COLORS='mt=01;33' egrep --color=always 'ansible.* '
+          ansible --version
+
+      - name: Show Molecule version
+        run: molecule --version
+        env:
+          PY_COLORS: '1'
+
+  trailing-whitespace:
+    name: Find Trailing Whitespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: harupy/find-trailing-whitespace@master
+
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Execute yamllint
+        run: yamllint *
+
+      - name: Show yamllint version
+        run: |
+          yamllint --version \
+          | GREP_COLORS='mt=01;34' egrep --color=always '[[:digit:]]' \
+          | GREP_COLORS='mt=01;34' egrep --color=always '\.' \
+          | GREP_COLORS='mt=01;33' egrep --color=always 'yamllint.* '

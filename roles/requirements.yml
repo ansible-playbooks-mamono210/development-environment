@@ -1,0 +1,11 @@
+---
+roles:
+  - name: geerlingguy.docker
+  - name: mamono210.git
+    src: https://github.com/ansible-roles-matsumura/git.git
+  - name: mamono210.user
+    src: https://github.com/ansible-roles-matsumura/user.git
+  - name: mamono210.pyenv
+    src: https://github.com/ansible-roles-matsumura/pyenv.git
+  - name: mamono210.vim
+    src: https://github.com/ansible-roles-matsumura/vim.git

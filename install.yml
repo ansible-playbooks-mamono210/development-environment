@@ -1,0 +1,13 @@
+---
+- hosts: all
+  become: true
+
+  roles:
+    - name: bootstrap
+    - name: geerlingguy.docker
+    - name: mamono210.user
+    - name: mamono210.vim
+    - name: mamono210.git
+    - name: git_completion
+    - name: mamono210.pyenv
+    - name: init-git

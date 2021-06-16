@@ -1,0 +1,83 @@
+---
+- name: Verify
+  hosts: all
+
+  tasks:
+    - name: Check whether pyenv is installed
+      become: yes
+      become_user: "{{ linux_user }}"
+      ansible.builtin.shell: |
+        bash -c "{{ pyenv_root }}/bin/pyenv --version"
+      register: pyenv_installed
+      changed_when: false
+
+    - name: Make sure pyenv is installed
+      ansible.builtin.debug:
+        var: pyenv_installed
+
+    - name: Set Python 3.9.5
+      become: yes
+      become_user: "{{ linux_user }}"
+      ansible.builtin.command: |
+        bash -c "{{ pyenv_root }}/bin/pyenv global 3.9.5"
+      changed_when: false
+
+    - name: Check whether Ansible is installed
+      become: yes
+      become_user: "{{ linux_user }}"
+      ansible.builtin.shell: |
+        bash -c "{{ pyenv_root }}/versions/3.9.5/bin/ansible --version"
+      register: ansible_installed
+      changed_when: false
+
+    - name: Make sure Ansible is installed
+      ansible.builtin.debug:
+        var: ansible_installed
+
+    - name: Check whether yamllint is installed
+      become: yes
+      become_user: "{{ linux_user }}"
+      ansible.builtin.shell: |
+        bash -c "{{ pyenv_root }}/versions/3.9.5/bin/yamllint --version"
+      register: yamllint_installed
+      changed_when: false
+
+    - name: Make sure yamllint is installed
+      ansible.builtin.debug:
+        var: yamllint_installed
+
+    - name: Check whether Linux user is created
+      ansible.builtin.shell: |
+        set -o pipefail
+        ls -l /home | grep {{ linux_user }}
+      args:
+        executable: /bin/bash
+      register: user_exists
+      changed_when: false
+
+    - name: Make sure Linux user is created
+      ansible.builtin.assert:
+        that:
+          - "'{{ linux_user }}' in user_exists.stdout"
+
+    - name: Debug var
+      debug:
+        var: user_exists
+
+    - name: Check whether Linux user belongs to 'docker' group
+      ansible.builtin.shell: |
+        set -o pipefail
+        groups {{ linux_user }} | grep docker
+      args:
+        executable: /bin/bash
+      register: user_groups_belongs_to
+      changed_when: false
+
+    - name: Make sure Linux user belongs to 'docker' group
+      ansible.builtin.assert:
+        that:
+          - "'{{ linux_groups }}' in user_groups_belongs_to.stdout"
+
+    - name: Debug var
+      debug:
+        var: user_groups_belongs_to

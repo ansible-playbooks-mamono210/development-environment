@@ -1,0 +1,15 @@
+---
+- name: Configure $HOME/.bash_profile
+  ansible.builtin.lineinfile:
+    path: "{{ linux_user_home }}/.bash_profile"
+    line: export REDMINE_IP=localhost
+    state: present
+    insertafter: EOF
+
+- name: Create init-git.sh
+  ansible.builtin.template:
+    src: init-git.sh
+    dest: "/home/{{ linux_user }}/init-git.sh"
+    owner: "{{ linux_user }}"
+    group: "{{ linux_user }}"
+    mode: 0755

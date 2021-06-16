@@ -1,0 +1,7 @@
+---
+- name: Install requirements
+  ansible.builtin.package:
+    name:
+      - python3
+      - libselinux-python3
+    state: present

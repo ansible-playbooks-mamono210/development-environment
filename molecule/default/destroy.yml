@@ -1,0 +1,70 @@
+---
+- name: Destroy
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+  tasks:
+    - block:
+        - name: Populate instance config
+          ansible.builtin.set_fact:
+            instance_conf: "{{ lookup('file', molecule_instance_config) | community.molecule.from_yaml }}"
+            skip_instances: false
+      rescue:
+        - name: Populate instance config when file missing
+          ansible.builtin.set_fact:
+            instance_conf: {}
+            skip_instances: true
+
+    - name: Destroy molecule instance(s)
+      amazon.aws.ec2:
+        state: absent
+        instance_ids: "{{ item.instance_ids }}"
+      register: server
+      with_items: "{{ instance_conf }}"
+      when: not skip_instances
+      async: 7200
+      poll: 0
+
+    - name: Wait for instance(s) deletion to complete
+      ansible.builtin.async_status:
+        jid: "{{ item.ansible_job_id }}"
+      register: ec2_jobs
+      until: ec2_jobs.finished
+      retries: 300
+      with_items: "{{ server.results }}"
+
+
+    - name: Delete remote keypair
+      amazon.aws.ec2_key:
+        name: "{{ item.keypair_name }}"
+        state: absent
+      loop: "{{ molecule_yml.platforms }}"
+      loop_control:
+        index_var: index
+      when: not skip_instances
+
+    - name: Sleep for 60 seconds instance(s) deletion to complete
+      ansible.builtin.wait_for:
+        timeout: 60
+      delegate_to: localhost
+      when: not skip_instances
+
+    - name: Delete security group
+      amazon.aws.ec2_group:
+        group_id: "{{ item.group_id }}"
+        state: absent
+      with_items: "{{ instance_conf }}"
+      when: not skip_instances
+
+    # Mandatory configuration for Molecule to function.
+
+    - name: Populate instance config
+      ansible.builtin.set_fact:
+        instance_conf: {}
+
+    - name: Dump instance config
+      ansible.builtin.copy:
+        content: "{{ instance_conf | to_json | from_json | community.molecule.to_yaml }}"
+        dest: "{{ molecule_instance_config }}"
+      when: server.changed | bool

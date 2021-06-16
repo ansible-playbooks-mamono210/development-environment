@@ -1,0 +1,28 @@
+# Pyenv Settings
+
+linux_user: tomonori
+linux_groups: docker
+linux_user_home: "/home/{{ linux_user }}"
+
+vimrc_dir: "/home/{{ linux_user }}"
+vimrc_owner: "{{ linux_user }}"
+vimrc_group: "{{ linux_user }}"
+
+pyenv_global: '3.9.5'
+pyenv_group: "{{ linux_user }}"
+pyenv_owner: "{{ linux_user }}"
+pyenv_root: "/home/{{ linux_user }}/.pyenv"
+pyenv_python_installs: ['3.9.5']
+pyenv_pip_packages:
+  - python_version: 3.9.5
+    pip_packages:
+      - name: pip
+        version: latest
+        extra_args: --upgrade
+      - name: wheel
+      - name: boto
+      - name: boto3
+      - name: docker
+      - name: molecule[ansible,docker,ec2,lint]
+    pip_executable: "{{ pyenv_root }}/versions/3.9.5/bin/pip"
+pyenv_python_executable: "{{ pyenv_root }}/versions/{{ pyenv_global}}/bin/python"
