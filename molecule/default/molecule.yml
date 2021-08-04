@@ -5,10 +5,27 @@ driver:
   name: ec2
 platforms:
   - name: ${PLATFORM_NAME}
+    ansible_user: centos
     image: ${AMI_ID}
     instance_type: t2.micro
     keypair_name: ${KEYPAIR_NAME}
     security_group_name: ${SECURITY_GROUP_NAME}
+    security_group_rules:
+      - proto: tcp
+        from_port: "{{ ssh_port }}"
+        to_port: "{{ ssh_port }}"
+        cidr_ip: '0.0.0.0/0'
+      - proto: icmp
+        from_port: 8
+        to_port: -1
+        cidr_ip: '0.0.0.0/0'
+    security_group_rules_egress:
+      - proto: -1
+        from_port: 0
+        to_port: 0
+        cidr_ip: '0.0.0.0/0'
+    ssh_port: 22
+    ssh_user: centos
     tag_name: ${TAG_NAME}
     tag_created_by: ${CREATED_BY}
     vpc_subnet_id: ${VPC_SUBNET_ID}
@@ -18,6 +35,7 @@ provisioner:
     defaults:
       callback_whitelist: ansible.posix.profile_tasks
   connection_options:
+    ansible_user: centos
     linux_user: tomonori
     linux_groups: docker
     pyenv_root: "/home/{{ linux_user }}/.pyenv"

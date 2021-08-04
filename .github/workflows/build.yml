@@ -90,9 +90,10 @@ jobs:
         run: |
           pip install -r molecule/requirements.txt
 
-      - name: Install required Ansible Collections
+      - name: Install required Ansible Collections and roles
         run: |
           ansible-galaxy collection install community.molecule
+          ansible-galaxy install -r molecule/default/requirements.yml
 
       - name: Create galaxy dependencies file in 'molecule/default/'
         run: |
@@ -123,7 +124,7 @@ jobs:
 
       - name: Set latest AMI image id to environment variables
         run: |
-          sleep 10
+          sleep 20
 
           AMI_ID=$(aws ec2 describe-images \
           --owners "${{ secrets.AMI_OWNER_ID }}" \
@@ -134,13 +135,14 @@ jobs:
         env:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
-      - name: Set timestamp for making sure Molecule would create unique AWS resources
+      - name: Set environment variable with timestamp for making sure Molecule would create unique AWS resources
         run: |
           TIMESTAMP=$(date --date "9 hours" "+%Y%m%d_%H:%M:%S")
-          echo "PLATFORM_NAME=molecule_development-environment_${TIMESTAMP}" >> $GITHUB_ENV
-          echo "KEYPAIR_NAME=molecule_development-environment_${TIMESTAMP}" >> $GITHUB_ENV
-          echo "SECURITY_GROUP_NAME=molecule_development-environment_${TIMESTAMP}" >> $GITHUB_ENV
-          echo "TAG_NAME=molecule_development-environment_${TIMESTAMP}" >> $GITHUB_ENV
+          VALUE=molecule_development-environment_${{ matrix.distro }}_${TIMESTAMP}
+          echo "PLATFORM_NAME=${VALUE}" >> $GITHUB_ENV
+          echo "KEYPAIR_NAME=${VALUE}" >> $GITHUB_ENV
+          echo "SECURITY_GROUP_NAME=${VALUE}" >> $GITHUB_ENV
+          echo "TAG_NAME=${VALUE}" >> $GITHUB_ENV
 
       - name: Set AWS resource creator name to system environment variables
         run: |
@@ -155,6 +157,7 @@ jobs:
           ANSIBLE_FORCE_COLOR: '1'
           ANSIBLE_PYTHON_INTERPRETER: '/usr/bin/python'
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          # CREATED_BY: sotred in system environment variables
           # KEYPAIR_NAME: sotred in system environment variables
           # PLATFORM_NAME: sotred in system environment variables
           PROFILE_TASKS_SORT_ORDER: 'none'
