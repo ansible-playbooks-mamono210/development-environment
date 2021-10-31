@@ -70,132 +70,17 @@ jobs:
           | GREP_COLORS='mt=01;34' egrep --color=always '\.' \
           | GREP_COLORS='mt=01;33' egrep --color=always 'detect-secrets.* '
 
-  molecule:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-
-      - name: Set Ansible Python interpreter
-        run: |
-          INTERPRETER=`which python`
-          echo "ANSIBLE_PYTHON_INTERPRETER=${INTERPRETER}" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        run: |
-          pip install -r molecule/requirements.txt
-
-      - name: Install required Ansible Collections and roles
-        run: |
-          ansible-galaxy collection install community.molecule
-          ansible-galaxy install -r molecule/default/requirements.yml
-
-      - name: Create galaxy dependencies file in 'molecule/default/'
-        run: |
-          cp roles/requirements.yml molecule/default/requirements.yml
-
-      - name: Set environment variable with timestamp for making sure Molecule would create unique AWS resources
-        run: |
-          TIMESTAMP=$(date --date "9 hours" "+%Y%m%d_%H%M%S")
-          echo "AWSIAM_USER=molecule_development-environment_${TIMESTAMP}" >> $GITHUB_ENV
-          echo "AWSIAM_POLICY_NAME=molecule_development-environment_${TIMESTAMP}" >> $GITHUB_ENV
-
-      - name: Create AWS Access Key
-        run: |
-          molecule dependency --scenario-name awsiam
-          molecule converge --scenario-name awsiam
-        env:
-          ANSIBLE_FORCE_COLOR: '1'
-          AWS_ACCESS_KEY_ID_1: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          AWS_SECRET_ACCESS_KEY_1: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # AWSIAM_USER: sotred in system environment variables
-          # AWSIAM_POLICY_NAME: sotred in system environment variables
-          MOLECULE_VERBOSITY: 0
-          PROFILE_TASKS_SORT_ORDER: 'none'
-          PROFILE_TASKS_TASK_OUTPUT_LIMIT: '200'
-          PY_COLORS: '1'
-          TZ: 'Asia/Tokyo'
-
-      - name: Set latest AMI image id to environment variables
-        run: |
-          sleep 20
-
-          AMI_ID=$(aws ec2 describe-images \
-          --owners "${{ secrets.AMI_OWNER_ID }}" \
-          --filters "Name=name,Values=centos7-*" \
-          --query 'Images[*][CreationDate, ImageId, Name]' \
-          --output text | sort -r | awk 'NR==1 {print $2}')
-          echo "AMI_ID=${AMI_ID}" >> $GITHUB_ENV
-        env:
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-
-      - name: Set environment variable with timestamp for making sure Molecule would create unique AWS resources
-        run: |
-          TIMESTAMP=$(date --date "9 hours" "+%Y%m%d_%H:%M:%S")
-          VALUE=molecule_development-environment_${{ matrix.distro }}_${TIMESTAMP}
-          echo "PLATFORM_NAME=${VALUE}" >> $GITHUB_ENV
-          echo "KEYPAIR_NAME=${VALUE}" >> $GITHUB_ENV
-          echo "SECURITY_GROUP_NAME=${VALUE}" >> $GITHUB_ENV
-          echo "TAG_NAME=${VALUE}" >> $GITHUB_ENV
-
-      - name: Set AWS resource creator name to system environment variables
-        run: |
-          author_email=$(git show -s --format='%ae' ${{ github.sha }})
-          echo "CREATED_BY=$author_email" >> $GITHUB_ENV
-
-      - name: Test with molecule
-        run: |
-          molecule test
-        env:
-          # AMI_ID: sotred in system environment variables
-          ANSIBLE_FORCE_COLOR: '1'
-          ANSIBLE_PYTHON_INTERPRETER: '/usr/bin/python'
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          # CREATED_BY: sotred in system environment variables
-          # KEYPAIR_NAME: sotred in system environment variables
-          # PLATFORM_NAME: sotred in system environment variables
-          PROFILE_TASKS_SORT_ORDER: 'none'
-          PROFILE_TASKS_TASK_OUTPUT_LIMIT: '200'
-          PY_COLORS: '1'
-          # SECURITY_GROUP_NAME: sotred in system environment variables
-          # TAG_NAME: sotred in system environment variables
-          TZ: 'Asia/Tokyo'
-          VPC_SUBNET_ID: ${{ secrets.VPC_SUBNET_ID }}
-
-      - name: Delete AWS Access Key
-        run: |
-          molecule cleanup --scenario-name awsiam
-        env:
-          ANSIBLE_FORCE_COLOR: '1'
-          AWS_ACCESS_KEY_ID_1: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          AWS_SECRET_ACCESS_KEY_1: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # AWSIAM_USER: sotred in system environment variables
-          # AWSIAM_POLICY_NAME: sotred in system environment variables
-          MOLECULE_VERBOSITY: 0
-          PROFILE_TASKS_SORT_ORDER: 'none'
-          PROFILE_TASKS_TASK_OUTPUT_LIMIT: '200'
-          PY_COLORS: '1'
-          TZ: 'Asia/Tokyo'
-
-      - name: Show Ansible version
-        run: |
-          pip list | grep ansible \
-          | GREP_COLORS='mt=01;34' egrep --color=always '[[:digit:]]' \
-          | GREP_COLORS='mt=01;34' egrep --color=always '\.' \
-          | GREP_COLORS='mt=01;33' egrep --color=always 'ansible.* '
-          ansible --version
-
-      - name: Show Molecule version
-        run: molecule --version
-        env:
-          PY_COLORS: '1'
+  vm-centos7:
+    uses: mamono210-github-actions-workflows/molecule-ec2/.github/workflows/workflows.yml@main
+    with:
+      ami-name: centos7-1*
+      tag-prefix: molecule_development-environment_centos7
+    secrets:
+      AMI_OWNER_ID: ${{ secrets.AMI_OWNER_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      VPC_SUBNET_ID: ${{ secrets.VPC_SUBNET_ID }}
 
   trailing-whitespace:
     name: Find Trailing Whitespace
