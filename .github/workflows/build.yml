@@ -12,11 +12,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: 3
 
       - name: Install ansible-lint
         run: |
-          pip install "ansible-lint[community,yamllint]"
+          pip install ansible ansible-lint
 
       - name: Install galaxy roles
         run: |
