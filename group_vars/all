@@ -19,10 +19,14 @@ pyenv_pip_packages:
       - name: pip
         version: latest
         extra_args: --upgrade
+      - name: ansible
+      - name: ansible-lint
       - name: wheel
       - name: boto
       - name: boto3
       - name: docker
-      - name: molecule[ansible,docker,ec2,lint]
+      - name: molecule
+      - name: molecule-docker
+      - name: molecule-ec2
     pip_executable: "{{ pyenv_root }}/versions/3.9.5/bin/pip"
 pyenv_python_executable: "{{ pyenv_root }}/versions/{{ pyenv_global}}/bin/python"
