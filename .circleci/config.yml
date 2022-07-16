@@ -75,6 +75,7 @@ jobs:
             molecule test
           environment:
             ANSIBLE_FORCE_COLOR: '1'
+            ANSIBLE_TASK_TIMEOUT: '600'
             AMI_NAME: "centos7-1*"
             # AWS_ACCESS_KEY_ID: sotred in system environment variables
             # AWS_DEFAULT_REGION: sotred in CircleCI environment variables
@@ -89,6 +90,7 @@ jobs:
             # SECURITY_GROUP_NAME: sotred in CircleCI environment variables
             # VPC_SUBNET_ID: sotred in CircleCI environment variables
             TZ: 'Asia/Tokyo'
+          no_output_timeout: 15m
       - run:
           name: Show Ansible version
           command: |
