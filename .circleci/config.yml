@@ -2,10 +2,6 @@
 version: 2.1
 
 executors:
-  molecule:
-    docker:
-      - image: ghcr.io/docker-images-mamono210/circleci-executors_molecule/molecule:ec2
-    resource_class: medium
   trailing-whitespace:
     docker:
       - image: ghcr.io/docker-images-mamono210/circleci-executors/trailing-whitespace:latest
@@ -14,6 +10,7 @@ executors:
 orbs:
   ansible-lint: orbss/ansible-lint@0.0.3
   aws-cli: circleci/aws-cli@3.1.1
+  molecule-ec2: orbss/molecule-ec2@0.0.4
   yamllint: orbss/yamllint@0.0.4
 
 jobs:
@@ -23,65 +20,21 @@ jobs:
       - checkout
       - ansible-lint/execute:
           molecule-playbook-test: true
-  molecule:
-    executor: molecule
+  molecule-ec2:
+    executor: molecule-ec2/default
     steps:
       - checkout
       - aws-cli/setup:
           profile-name: default
           role-arn: ${AWS_ROLE_ARN}
-          role-session-name: circleci_ansible-playbook_development-environment
-          session-duration: '1800'
-      - run:
-          name: Set timestamp for making sure Molecule would create unique AWS resources
-          command: |
-            TIMESTAMP=$(date --date "9 hours" "+%Y%m%d_%H:%M:%S")
-            VALUE='molecule_development-environment'
-            AUTHOR_EMAIL=$(git show -s --format='%ae' ${CIRCLE_SHA1})
-
-            echo "export CREATED_BY=${AUTHOR_EMAIL}" >> $BASH_ENV
-            echo "export KEYPAIR_NAME=${VALUE}_${TIMESTAMP}" >> $BASH_ENV
-            echo "export PLATFORM_NAME=${VALUE}_${TIMESTAMP}" >> $BASH_ENV
-            echo "export SECURITY_GROUP_NAME=${VALUE}_${TIMESTAMP}" >> $BASH_ENV
-            echo "export TAG_NAME=${VALUE}_${TIMESTAMP}" >> $BASH_ENV
-            source $BASH_ENV
-      - run:
-          name: Install Ansible roles
-          command: |
-            ansible-galaxy install -r molecule/default/requirements.yml
-      - run:
-          name: Test with molecule
-          command: |
-            molecule test
-          environment:
-            ANSIBLE_FORCE_COLOR: '1'
-            ANSIBLE_TASK_TIMEOUT: '600'
-            AMI_NAME: "centos7-1*"
-            # AWS_ACCESS_KEY_ID: sotred in system environment variables
-            # AWS_DEFAULT_REGION: sotred in CircleCI environment variables
-            # AWS_SECRET_ACCESS_KEY: sotred in system environment variables
-            # CREATED_BY: stored in system environment variables
-            # EC2_REGION: stored in CircleCI environment variables
-            # KEYPAIR_NAME: sotred in system environment variables
-            # PLATFORM_NAME: sotred in system environment variables
-            PROFILE_TASKS_SORT_ORDER: 'none'
-            PROFILE_TASKS_TASK_OUTPUT_LIMIT: '200'
-            PY_COLORS: '1'
-            # SECURITY_GROUP_NAME: sotred in CircleCI environment variables
-            # VPC_SUBNET_ID: sotred in CircleCI environment variables
-            TZ: 'Asia/Tokyo'
-          no_output_timeout: 15m
-      - run:
-          name: Show Ansible version
-          command: |
-            pip list | grep ansible \
-            | GREP_COLORS='mt=01;34' egrep --color=always '[[:digit:]]' \
-            | GREP_COLORS='mt=01;34' egrep --color=always '\.' \
-            | GREP_COLORS='mt=01;33' egrep --color=always 'ansible.* '
-            ansible --version
-      - run:
-          name: Show Molecule version
-          command: molecule --version
+          role-session-name: "molecule_development-environment"
+          session-duration: '3600'
+      - molecule-ec2/execute:
+          aws-ami-name: "centos7-1*"
+          aws-ami-owner-id: "808683561341"
+          aws-resource-name: "molecule_development-environment"
+          aws-vpc-subnet-id: "subnet-022a704b3061b8b39"
+          circleci-timeout: "15m"
   yamllint:
     executor: yamllint/default
     steps:
@@ -106,7 +59,7 @@ workflows:
       - ansible-lint:
           requires:
             - yamllint
-      - molecule:
+      - molecule-ec2:
           context: AWS_OPENID_CONNECT_TOKENS
           requires:
             - ansible-lint
