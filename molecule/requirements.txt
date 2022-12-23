@@ -4,3 +4,4 @@ boto3
 molecule
 molecule-ec2
 docker
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
