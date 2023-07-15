@@ -30,7 +30,7 @@ jobs:
           role-session-name: "molecule_development-environment"
           session-duration: '3600'
       - molecule-ec2/execute:
-          aws-ami-name: "centos7-1*"
+          aws-ami-name: "centos-stream8-1*"
           aws-ami-owner-id: "808683561341"
           aws-resource-name: "molecule_development-environment"
           aws-vpc-subnet-id: "subnet-022a704b3061b8b39"

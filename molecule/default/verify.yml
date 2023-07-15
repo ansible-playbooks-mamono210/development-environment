@@ -81,3 +81,12 @@
     - name: Debug var
       ansible.builtin.debug:
         var: user_groups_belongs_to
+
+    - name: Check OS version
+      ansible.builtin.command: cat /etc/redhat-release
+      register: os_version
+      changed_when: false
+
+    - name: Show OS version
+      ansible.builtin.debug:
+        var: os_version
