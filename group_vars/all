@@ -26,7 +26,5 @@ pyenv_pip_packages:
       - name: boto3
       - name: docker
       - name: molecule
-      - name: molecule-docker
-      - name: molecule-ec2
     pip_executable: "{{ pyenv_root }}/versions/3.9.5/bin/pip"
 pyenv_python_executable: "{{ pyenv_root }}/versions/{{ pyenv_global}}/bin/python"
