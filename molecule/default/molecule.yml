@@ -8,7 +8,7 @@ platforms:
     ansible_user: centos
     image_name: ${AMI_NAME}
     image_owner: ${AMI_OWNER_ID}
-    instance_type: t2.micro
+    instance_type: ${INSTANCE_TYPE}
     keypair_name: ${KEYPAIR_NAME}
     security_group_name: ${SECURITY_GROUP_NAME}
     security_group_rules:
