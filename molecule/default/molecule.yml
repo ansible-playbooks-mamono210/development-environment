@@ -31,6 +31,7 @@ provisioner:
   config_options:
     defaults:
       callbacks_enabled: ansible.posix.profile_tasks
+      timeout: 300
   connection_options:
     ansible_user: centos
     linux_user: tomonori
