@@ -4,7 +4,7 @@
 
   roles:
     - name: bootstrap
-    - name: geerlingguy.docker
+    - name: mamono210.docker
     - name: mamono210.user
     - name: mamono210.vim
     - name: mamono210.git

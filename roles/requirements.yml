@@ -1,6 +1,7 @@
 ---
 roles:
-  - name: geerlingguy.docker
+  - name: mamono210.docker
+    src: https://github.com/ansible-roles-matsumura/docker.git
   - name: mamono210.git
     src: https://github.com/ansible-roles-matsumura/git.git
   - name: mamono210.user
