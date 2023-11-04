@@ -1,12 +1,12 @@
 ---
 roles:
   - name: mamono210.docker
-    src: https://github.com/ansible-roles-matsumura/docker.git
+    src: https://github.com/ansible-roles-mamono210/docker.git
   - name: mamono210.git
-    src: https://github.com/ansible-roles-matsumura/git.git
+    src: https://github.com/ansible-roles-mamono210/git.git
   - name: mamono210.user
-    src: https://github.com/ansible-roles-matsumura/user.git
+    src: https://github.com/ansible-roles-mamono210/user.git
   - name: mamono210.pyenv
-    src: https://github.com/ansible-roles-matsumura/pyenv.git
+    src: https://github.com/ansible-roles-mamono210/pyenv.git
   - name: mamono210.vim
-    src: https://github.com/ansible-roles-matsumura/vim.git
+    src: https://github.com/ansible-roles-mamono210/vim.git
