@@ -21,7 +21,9 @@ jobs:
       - ansible-lint/execute:
           molecule-playbook-test: true
   molecule-ec2:
-    executor: molecule-ec2/default
+    machine:
+      image: ubuntu-2204:2023.10.1
+    resource_class: medium
     parameters:
       ansible-user:
         type: string
@@ -47,6 +49,14 @@ jobs:
           role-arn: ${AWS_ROLE_ARN}
           role-session-name: << parameters.aws-resource-name >>
           session-duration: '2100'
+      - run:
+          name: Install Molecule and dependencies
+          command: |
+            pip3 install -r molecule/requirements.txt
+      - run:
+          name: Install required Ansible roles
+          command: |
+            ansible-galaxy install -r molecule/<< parameters.molecule-scenario-name >>/requirements.yml
       - molecule-ec2/execute:
           ansible-user: << parameters.ansible-user >>
           aws-ami-name: << parameters.aws-ami-name >>
@@ -81,14 +91,14 @@ workflows:
           requires:
             - yamllint
       - molecule-ec2:
-          ansible-user: centos
-          aws-ami-name: 'centos-stream8-1*'
+          ansible-user: ec2-user
+          aws-ami-name: centos-stream9-1*
           aws-ami-owner-id: '808683561341'
-          aws-instance-type: 't2.micro'
-          aws-resource-name: 'circleci_ansible-playbook_development-environment_centos-stream8'
-          aws-vpc-subnet-id: 'subnet-022a704b3061b8b39'
-          circleci-timeout: '20m'
-          molecule-scenario-name: 'default'
+          aws-instance-type: t2.large
+          aws-resource-name: circleci_ansible-playbook_development-environment_cs9
+          aws-vpc-subnet-id: subnet-022a704b3061b8b39
+          circleci-timeout: '30m'
+          molecule-scenario-name: default
           context: AWS_OPENID_CONNECT_TOKENS
           requires:
             - ansible-lint

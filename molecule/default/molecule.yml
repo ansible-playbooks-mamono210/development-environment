@@ -2,10 +2,9 @@
 dependency:
   name: galaxy
 driver:
-  name: delegated
+  name: default
 platforms:
   - name: ${PLATFORM_NAME}
-    ansible_user: centos
     image_name: ${AMI_NAME}
     image_owner: ${AMI_OWNER_ID}
     instance_type: ${INSTANCE_TYPE}
@@ -16,37 +15,52 @@ platforms:
         from_port: 22
         to_port: 22
         cidr_ip: '0.0.0.0/0'
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: '0.0.0.0/0'
     security_group_rules_egress:
       - proto: -1
         from_port: 0
         to_port: 0
         cidr_ip: '0.0.0.0/0'
     ssh_port: 22
-    ssh_user: centos
+    ssh_user: ${ANSIBLE_USER}
     tag_name: ${TAG_NAME}
     tag_created_by: ${CREATED_BY}
+    volumes:
+      - device_name: /dev/sda1
+        ebs:
+          delete_on_termination: yes
+          volume_type: 'gp3'
     vpc_subnet_id: ${VPC_SUBNET_ID}
 provisioner:
   name: ansible
   config_options:
     defaults:
       callbacks_enabled: ansible.posix.profile_tasks
-      timeout: 300
   connection_options:
-    ansible_user: centos
-    linux_user: tomonori
-    linux_groups: docker
-    pyenv_root: "/home/{{ linux_user }}/.pyenv"
+    ansible_user: ${ANSIBLE_USER}
+    vimrc_dir: /home/tomonori
+    vimrc_group: tomonori
+    vimrc_owner: tomonori
+    vimrc_mode: '0755'
+    vnc_depth: '24'
+    vnc_display: ':1'
+    vnc_geometry: '1920x1080'
+    vnc_password: vncpassword
+    vnc_user: tomonori
+    users:
+      - name: tomonori
+        groups: docker
+  log: false
   playbooks:
     converge: ../../install.yml
-  log: true
 verifier:
   name: ansible
 scenario:
   test_sequence:
     - dependency
-    - cleanup
-    - destroy
     - syntax
     - create
     - prepare

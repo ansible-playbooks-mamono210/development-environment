@@ -1,6 +1,7 @@
+wheel
+docker
 ansible
+molecule
+molecule-docker
 boto
 boto3
-molecule
-molecule-ec2
-docker

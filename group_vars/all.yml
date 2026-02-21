@@ -1,0 +1,15 @@
+---
+linux_user: tomonori
+linux_groups: docker
+linux_user_home: "/home/{{ linux_user }}"
+
+vimrc_dir: "/home/{{ linux_user }}"
+vimrc_owner: "{{ linux_user }}"
+vimrc_group: "{{ linux_user }}"
+
+vnc_depth: "24"
+vnc_display: ":1"
+vnc_geometry: "1920x1080"
+vnc_password: "vncpassword"
+vnc_session_command: "/usr/bin/gnome-session"
+vnc_user: "{{ linux_user }}"
