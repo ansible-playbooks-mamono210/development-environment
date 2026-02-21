@@ -4,10 +4,33 @@
 
   roles:
     - name: bootstrap
+      tags:
+        - bootstrap
+
     - name: mamono210.docker
+      tags:
+        - docker
+
     - name: mamono210.user
+      tags:
+        - user
+
     - name: mamono210.vim
+      tags:
+        - vim
+
     - name: mamono210.git
+      tags:
+        - git
+
     - name: mamono210.vnc_server
+      tags:
+        - vnc_server
+
     - name: git_completion
+      tags:
+        - git_completion
+
     - name: init_git
+      tags:
+        - init_git
